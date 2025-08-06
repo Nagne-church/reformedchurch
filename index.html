@@ -487,7 +487,8 @@
             </header>
             <main id="modal-body" class="modal-body">
                 <div id="chat-window" class="flex flex-col h-full space-y-4">
-                    </div>
+                    <!-- Chat messages will be appended here -->
+                </div>
             </main>
             <footer class="modal-footer">
                 <form id="qa-form" class="flex items-center gap-2">
@@ -519,11 +520,9 @@
                     const card = e.target.closest('.infographic-card');
                     currentChapterTitle = card.querySelector('h2').innerText;
                     
-                    const contentDiv = card.querySelector('div > div');
-                    currentChapterContext = Array.from(contentDiv.children)
-                        .map(el => el.innerText.trim())
-                        .filter(text => text)
-                        .join('\n\n');
+                    // FIX: Use a more specific selector for the content container.
+                    const contentDiv = card.querySelector('.space-y-4');
+                    currentChapterContext = contentDiv.innerText.trim();
 
                     modalTitle.textContent = `${currentChapterTitle}`;
                     chatWindow.innerHTML = `
@@ -596,7 +595,7 @@
 
                     const data = await response.json();
                     
-                    // Safe navigation to extract text
+                    // FIX: More robust check for the response text.
                     const aiResponse = data?.candidates?.[0]?.content?.parts?.[0]?.text;
 
                     if (aiResponse === undefined) {
@@ -618,15 +617,15 @@
                 const bubbleClass = sender === 'user' ? 'user-bubble' : 'ai-bubble';
                 messageDiv.className = `chat-bubble ${bubbleClass} flex flex-col`;
                 
-                // Simple markdown to HTML conversion
-                let htmlText = text
+                // FIX: Sanitize text before converting to HTML to prevent XSS.
+                let sanitizedText = text
                     .replace(/&/g, "&amp;")
                     .replace(/</g, "&lt;")
                     .replace(/>/g, "&gt;")
-                    .replace(/"g, "&quot;")
+                    .replace(/"/g, "&quot;")
                     .replace(/'/g, "&#039;");
                 
-                htmlText = htmlText
+                let htmlText = sanitizedText
                     .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
                     .replace(/\n/g, '<br>');
 
@@ -635,4 +634,22 @@
                 chatWindow.scrollTop = chatWindow.scrollHeight;
             }
             
-            function showTyping
+            function showTypingIndicator() {
+                const typingDiv = document.createElement('div');
+                typingDiv.id = 'typing-indicator';
+                typingDiv.className = 'chat-bubble ai-bubble typing-indicator';
+                typingDiv.innerHTML = '<span></span><span></span><span></span>';
+                chatWindow.appendChild(typingDiv);
+                chatWindow.scrollTop = chatWindow.scrollHeight;
+            }
+
+            function removeTypingIndicator() {
+                const indicator = document.getElementById('typing-indicator');
+                if (indicator) {
+                    indicator.remove();
+                }
+            }
+        });
+    </script>
+</body>
+</html>
